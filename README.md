@@ -4,11 +4,11 @@
 
 **[Download the latest release](../../releases/latest)** – unofficial, not affiliated with Riot Games, GloriousEggroll or Valve.
 
-| Launcher                           | Status                    |
-| ---------------------------------- | ------------------------- |
-| Bottles 67 (Flatpak)               | tested                    |
-| Heroic Games Launcher (Flatpak)    | tested                    |
-| Lutris, Steam, Steam Deck, umu-run | untested, reports welcome |
+| Launcher                           | Status                                       |
+| ---------------------------------- | -------------------------------------------- |
+| Bottles 67 (Flatpak)               | tested and works                             |
+| Heroic Games Launcher (Flatpak)    | tested and works                             |
+| Lutris, Steam, Steam Deck, umu-run | untested, [reports welcome](CONTRIBUTING.md) |
 
 Last tested: 2026-11-17 with Riot Client 143.0.5.5260, in an existing and in a new prefix.
 
