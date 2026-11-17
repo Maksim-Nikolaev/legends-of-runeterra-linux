@@ -1,6 +1,6 @@
 # Legends of Runeterra on Linux: "Couldn't update" and the crashing Riot Client (October 2026)
 
-> **Superseded:** the patched runner in this repository (`GE-Proton9-27-LoR1`, see the [README](../README.md)) fixes both problems without keeping an old client. This workaround remains as a fallback for setups that cannot switch runners.
+> **Superseded:** the patched runner in this repository (`GE-Proton9-27-LoR2`, see the [README](../README.md)) fixes both problems without keeping an old client. This workaround remains as a fallback for setups that cannot switch runners.
 
 A workaround for running Legends of Runeterra (LoR) through Wine/Proton when the Riot Client either refuses to start with "Couldn't update" or shows no window at all. Tested on 2026-10-27 with Bottles 67 (Flatpak, umu prefix), GE-Proton 9-27, AMD GPU (RADV). It should apply to any Wine prefix (Lutris, umu-run, plain Wine) with adjusted paths, but only the setup above was tested.
 

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ge_tag="GE-Proton9-27"
-revision="LoR1"
+revision="LoR2"
 name="$ge_tag-$revision"
 repo="$(cd "$(dirname "$0")" && pwd)"
 build="$repo/build"
@@ -89,6 +89,9 @@ fi
 for dll in "${dlls[@]}"; do
   cp "$build/dlls/$dll.dll" "$target/$dll.dll"
 done
+
+cp "$repo/runner/riot_autolaunch.py" "$runner/riot_autolaunch.py"
+patch -p1 --forward --quiet -d "$runner" < "$repo/runner/proton-riot-autolaunch.patch"
 
 rm -rf "$runner/__pycache__"
 sed -i "s/^CURRENT_PREFIX_VERSION=\"$ge_tag\"$/CURRENT_PREFIX_VERSION=\"$name\"/" "$runner/proton"

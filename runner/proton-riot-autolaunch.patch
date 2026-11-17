@@ -1,0 +1,13 @@
+--- a/proton
++++ b/proton
+@@ -1942,6 +1942,10 @@
+         sys.exit(rc)
+ 
+     import protonfixes
++    import riot_autolaunch
++
++    if sys.argv[1] in ("run", "waitforexitandrun"):
++        riot_autolaunch.start(g_compatdata.prefix_dir, sys.argv[2:], log)
+ 
+     #determine mode
+     rc = 0

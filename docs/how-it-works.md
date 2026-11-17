@@ -1,6 +1,6 @@
 # How GE-Proton9-27-LoR works
 
-Technical background for [GE-Proton9-27-LoR1](../README.md): why Legends of Runeterra broke on Linux in October 2026, what the patches change, and how the runner is built.
+Technical background for [GE-Proton9-27-LoR2](../README.md): why Legends of Runeterra broke on Linux in October 2026, what the patches change, and how the runner is built.
 
 ## The two problems
 
@@ -20,6 +20,21 @@ Riot Client v142 (release `626519AF431D7214`, about 2026-10-26) moved from Elect
 
 Newer Proton versions have these functions, but LoR itself crashed on GE-Proton 11-11 in testing, so the fix keeps GE-Proton 9-27 and adds only what is missing.
 
+### 3. The game does not start by itself
+
+Riot's LoR shortcut starts `RiotClientServices.exe --launch-product=bacon --launch-patchline=live`. On Windows the client then starts the game without a click. Under Wine the client stops at the Play button. Its log shows why:
+
+```
+000001.523| riot-client-lifecycle: Setting product context to bacon.live, willAutoLaunch=true
+000001.530| riot-client-lifecycle: GamePlayPermissionProvider resolved game:play for productId='bacon' isGranted=0 reason='UNAUTHORIZED'
+000001.531| riot-client-lifecycle: Setting product context to bacon.live, willAutoLaunch=false
+000002.917| riot-client-lifecycle: GamePlayPermissionProvider resolved game:play for productId='bacon' isGranted=1
+```
+
+The client checks the play permission once, 1.5 s after the start. The saved login is restored only about 1.5 s later, so the client cancels the start and does not try again.
+
+`runner/riot_autolaunch.py` fixes this in the runner's `proton` script. When the executable is `RiotClientServices.exe` and the arguments contain `--launch-product`, a thread watches the client's local API (port and password from the client's `lockfile` in the prefix). When the client reaches the phase `WaitForLaunch` and reports the product as eligible, the thread sends the same launch request as the Play button (`POST /product-launcher/v1/products/<product>/patchlines/<patchline>`) and stops. It also stops when the game already runs, when the client is gone for 60 s, or after 10 minutes, for example when nobody logs in. Set `PROTON_RIOT_AUTOLAUNCH=0` to turn it off.
+
 ## What the patches change
 
 | Patch | DLL | Change |
@@ -29,7 +44,7 @@ Newer Proton versions have these functions, but LoR itself crashed on GE-Proton 
 | `0003` | `combase`, `ole32` | Replaces the crashing `RoGetAgileReference` stub with one that returns `E_NOTIMPL`, and exports it from `ole32` too. |
 | `0004` | `kernelbase` | `GetMappedFileNameW` returns `\Device\HarddiskVolumeN\...` like Windows does. Fixes problem 1. |
 
-Only these five DLLs are rebuilt, from the exact Wine source of GE-Proton 9-27 with all of GE's patches applied. Every other file of the runner is the original GE-Proton 9-27. On the first start Proton logs `Upgrading prefix from GE-Proton9-27 to GE-Proton9-27-LoR1` and copies the patched DLLs into the prefix; switching back to GE-Proton9-27 copies the originals back.
+Only these five DLLs are rebuilt, from the exact Wine source of GE-Proton 9-27 with all of GE's patches applied. Every other file of the runner is the original GE-Proton 9-27. On the first start Proton logs `Upgrading prefix from GE-Proton9-27 to GE-Proton9-27-LoR2` and copies the patched DLLs into the prefix; switching back to GE-Proton9-27 copies the originals back.
 
 ## Build
 
@@ -37,7 +52,7 @@ Only these five DLLs are rebuilt, from the exact Wine source of GE-Proton 9-27 w
 
 1. `scripts/prepare-wine.sh` clones `proton-ge-custom` at tag `GE-Proton9-27`, fetches its `wine` and `wine-staging` submodules, runs the Wine part of GE's `patches/protonprep-valve-staging.sh` unchanged, then applies `patches/*.patch`.
 2. `scripts/build-dlls.sh` regenerates Wine's build files the way GE's build does, configures a 64-bit MinGW build and compiles only the five DLLs.
-3. `build.sh` copies GE-Proton9-27 (downloaded and checksum-verified, or `--base <dir>`), replaces the five DLLs in `files/lib64/wine/x86_64-windows`, renames the runner (`CURRENT_PREFIX_VERSION`, `version`, `compatibilitytool.vdf`) and packs it into `dist/`.
+3. `build.sh` copies GE-Proton9-27 (downloaded and checksum-verified, or `--base <dir>`), replaces the five DLLs in `files/lib64/wine/x86_64-windows`, adds `runner/riot_autolaunch.py` and its hook (`runner/proton-riot-autolaunch.patch`) to the `proton` script, renames the runner (`CURRENT_PREFIX_VERSION`, `version`, `compatibilitytool.vdf`) and packs it into `dist/`.
 
 GE's own patch for Vanguard: Saga of Heroes passes a wide string to `GetEnvironmentVariableA`. GE's older compiler only warned about it; GCC 14 treats it as an error, so the build turns `incompatible-pointer-types`, `int-conversion` and `implicit-function-declaration` back into warnings. The affected code is compiled the same way as in GE's release.
 
@@ -46,7 +61,7 @@ GE's own patch for Vanguard: Saga of Heroes passes a wide string to `GetEnvironm
 `tools/check-imports.py` lists every function the Riot Client loads that a runner does not provide:
 
 ```bash
-tools/check-imports.py "<prefix>/drive_c/Riot Games/Riot Client" /path/to/GE-Proton9-27-LoR1
+tools/check-imports.py "<prefix>/drive_c/Riot Games/Riot Client" /path/to/GE-Proton9-27-LoR2
 ```
 
 Output for client 142.0.1.5150 on this runner:
